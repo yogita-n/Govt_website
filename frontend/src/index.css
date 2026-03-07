@@ -1,0 +1,54 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 60 100% 95%;
+    --foreground: 0 0% 10%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 10%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 10%;
+    --primary: 100 32% 47%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 100 32% 80%;
+    --secondary-foreground: 100 32% 20%;
+    --muted: 100 20% 92%;
+    --muted-foreground: 220 9% 46%;
+    --accent: 0 66% 40%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 100 20% 85%;
+    --input: 100 20% 85%;
+    --ring: 100 32% 47%;
+    --radius: 0.75rem;
+    --sidebar-background: 120 30% 12%;
+    --sidebar-foreground: 0 0% 90%;
+    --sidebar-primary: 100 32% 47%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 120 25% 18%;
+    --sidebar-accent-foreground: 0 0% 90%;
+    --sidebar-border: 120 20% 20%;
+    --sidebar-ring: 100 32% 47%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-cream text-textdark font-body antialiased;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-heading;
+  }
+}
+
+@layer utilities {
+  .section-padding {
+    @apply px-4 sm:px-6 lg:px-8 py-16 md:py-24;
+  }
+}
