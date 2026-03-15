@@ -14,10 +14,11 @@ import ActivitiesPage from "./pages/admin/ActivitiesPage";
 import ActivityFormPage from "./pages/admin/ActivityFormPage";
 import AdminProtectedRoute from "./components/shared/AdminProtectedRoute";
 import NotFound from "./pages/NotFound";
-
+import { LanguageProvider } from './contexts/LanguageContext';
 const queryClient = new QueryClient();
 
 const App = () => (
+  <LanguageProvider>
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
@@ -41,6 +42,7 @@ const App = () => (
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
+  </LanguageProvider>
 );
 
 export default App;
