@@ -134,12 +134,12 @@ export default function Contact() {
             <h3 className="font-heading font-bold text-white">Support Our Mission</h3>
             <p className="text-sm text-white/80">Registered under 12A &amp; 80G</p>
             {contact && <p className="text-xs text-white/60">{contact.taxNote}</p>}
-            <button
+            {/* <button
               onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
               className="mt-3 w-full bg-accent text-white py-3 rounded-xl font-semibold hover:bg-accent/90 transition-colors"
             >
               Donate Now
-            </button>
+            </button> */}
           </div>
 
         </div>

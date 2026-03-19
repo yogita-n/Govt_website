@@ -13,6 +13,8 @@ navigate to frontend
  run the backend
  `npm run dev`
 
+
+
  In the Localhost:
  Frontend: http://localhost:5173/
  Backend: http://localhost:5000/

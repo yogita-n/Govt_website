@@ -1,8 +1,17 @@
 import type { Config } from "tailwindcss";
 
 export default {
+
+
   darkMode: ["class"],
   content: ["./pages/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}", "./app/**/*.{ts,tsx}", "./src/**/*.{ts,tsx}"],
+  safelist: [
+    'goog-te-banner-frame',
+    'goog-te-balloon-frame',
+    'goog-te-spinner-pos',
+    'goog-te-combo',
+    'skiptranslate',
+  ],
   prefix: "",
   theme: {
     container: {
