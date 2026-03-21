@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import SiteImage from '../../models/SiteImage.js';
+import { db } from '../../config/firebase.js';
 import upload from '../../middleware/upload.js';
 import { uploadToCloudinary, deleteFromCloudinary } from '../../utils/cloudinaryHelpers.js';
 
@@ -8,7 +8,8 @@ const router = Router();
 // GET /api/admin/site-images
 router.get('/', async (req, res, next) => {
   try {
-    const images = await SiteImage.find();
+    const snapshot = await db.collection('siteimages').get();
+    const images = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
     res.json({ success: true, data: images });
   } catch (err) {
     next(err);
@@ -22,11 +23,12 @@ router.put('/:key', upload.single('image'), async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'No image file provided' });
     }
 
-    const existing = await SiteImage.findOne({ key: req.params.key });
+    const imageRef = db.collection('siteimages').doc(req.params.key);
+    const existing = await imageRef.get();
 
     // Delete old Cloudinary asset if one exists
-    if (existing?.publicId) {
-      await deleteFromCloudinary(existing.publicId);
+    if (existing.exists && existing.data()?.publicId) {
+      await deleteFromCloudinary(existing.data().publicId);
     }
 
     // Upload new image with a fixed publicId
@@ -36,13 +38,10 @@ router.put('/:key', upload.single('image'), async (req, res, next) => {
       `pvet/static/${req.params.key}`
     );
 
-    const updated = await SiteImage.findOneAndUpdate(
-      { key: req.params.key },
-      { $set: { url, publicId } },
-      { new: true, upsert: true }
-    );
+    await imageRef.set({ url, publicId }, { merge: true });
 
-    res.json({ success: true, data: updated });
+    const snap = await imageRef.get();
+    res.json({ success: true, data: { id: snap.id, ...snap.data() } });
   } catch (err) {
     next(err);
   }

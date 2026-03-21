@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import Campus from '../../models/Campus.js';
+import { db } from '../../config/firebase.js';
 import upload from '../../middleware/upload.js';
 import { uploadToCloudinary, deleteFromCloudinary } from '../../utils/cloudinaryHelpers.js';
 
@@ -8,7 +8,8 @@ const router = Router();
 // GET /api/admin/campuses
 router.get('/', async (req, res, next) => {
   try {
-    const campuses = await Campus.find().sort({ slug: 1 });
+    const snapshot = await db.collection('campuses').orderBy('slug').get();
+    const campuses = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
     res.json({ success: true, data: campuses });
   } catch (err) {
     next(err);
@@ -19,18 +20,17 @@ router.get('/', async (req, res, next) => {
 router.put('/:slug', async (req, res, next) => {
   try {
     const { title, subtitle, description, stats } = req.body;
+    const campusRef = db.collection('campuses').doc(req.params.slug);
+    const snap = await campusRef.get();
 
-    const campus = await Campus.findOneAndUpdate(
-      { slug: req.params.slug },
-      { $set: { title, subtitle, description, stats } },
-      { new: true, runValidators: true }
-    );
-
-    if (!campus) {
+    if (!snap.exists) {
       return res.status(404).json({ success: false, message: 'Campus not found' });
     }
 
-    res.json({ success: true, data: campus });
+    const updateData = { title, subtitle, description, stats };
+    await campusRef.update(updateData);
+
+    res.json({ success: true, data: { id: snap.id, ...snap.data(), ...updateData } });
   } catch (err) {
     next(err);
   }
@@ -43,14 +43,16 @@ router.put('/:slug/image', upload.single('image'), async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'No image file provided' });
     }
 
-    const campus = await Campus.findOne({ slug: req.params.slug });
-    if (!campus) {
+    const campusRef = db.collection('campuses').doc(req.params.slug);
+    const snap = await campusRef.get();
+
+    if (!snap.exists) {
       return res.status(404).json({ success: false, message: 'Campus not found' });
     }
 
     // Delete old image from Cloudinary if it exists
-    if (campus.image?.publicId) {
-      await deleteFromCloudinary(campus.image.publicId);
+    if (snap.data().image?.publicId) {
+      await deleteFromCloudinary(snap.data().image.publicId);
     }
 
     // Upload new image — fixed publicId keeps the same CDN URL
@@ -60,13 +62,9 @@ router.put('/:slug/image', upload.single('image'), async (req, res, next) => {
       `pvet/campuses/${req.params.slug}`
     );
 
-    const updated = await Campus.findOneAndUpdate(
-      { slug: req.params.slug },
-      { $set: { image: { url, publicId } } },
-      { new: true }
-    );
+    await campusRef.update({ image: { url, publicId } });
 
-    res.json({ success: true, data: updated });
+    res.json({ success: true, data: { id: snap.id, ...snap.data(), image: { url, publicId } } });
   } catch (err) {
     next(err);
   }

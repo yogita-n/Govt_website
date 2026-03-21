@@ -2,7 +2,7 @@ import { Router } from 'express';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import rateLimit from 'express-rate-limit';
-import Admin from '../../models/Admin.js';
+import { db } from '../../config/firebase.js';
 
 const router = Router();
 
@@ -23,10 +23,12 @@ router.post('/login', loginLimiter, async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Email and password are required' });
     }
 
-    const admin = await Admin.findOne({ email: email.toLowerCase() });
-    if (!admin) {
+    const snap = await db.collection('admins').doc(email.toLowerCase()).get();
+    if (!snap.exists) {
       return res.status(401).json({ success: false, message: 'Invalid credentials' });
     }
+
+    const admin = snap.data();
 
     const isMatch = await bcrypt.compare(password, admin.password);
     if (!isMatch) {
@@ -34,7 +36,7 @@ router.post('/login', loginLimiter, async (req, res, next) => {
     }
 
     const token = jwt.sign(
-      { adminId: admin._id, email: admin.email },
+      { adminId: snap.id, email: admin.email },
       process.env.JWT_SECRET,
       { expiresIn: process.env.JWT_EXPIRES_IN }
     );

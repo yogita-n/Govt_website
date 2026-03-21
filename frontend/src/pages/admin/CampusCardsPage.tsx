@@ -47,7 +47,7 @@ function CampusCard({ campus }: { campus: Campus }) {
   return (
     <div className="bg-white rounded-2xl shadow overflow-hidden">
       <div className="relative">
-        <img src={campus.image.url} alt={campus.title} className="aspect-video w-full object-cover" />
+        <img src={campus.image?.url || ''} alt={campus.title} className="aspect-video w-full object-cover bg-gray-100" />
         <button onClick={() => setImgModal(true)} className="absolute bottom-3 right-3 bg-white/90 text-accent text-xs font-semibold px-3 py-1.5 rounded-lg hover:bg-white">
           Replace Image
         </button>
@@ -92,7 +92,7 @@ function CampusCard({ campus }: { campus: Campus }) {
       <ImageReplaceModal
         open={imgModal}
         onOpenChange={setImgModal}
-        currentUrl={campus.image.url}
+        currentUrl={campus.image?.url || ''}
         label={campus.title}
         onReplace={async (file) => {
           try {

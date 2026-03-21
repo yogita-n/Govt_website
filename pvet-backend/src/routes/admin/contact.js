@@ -1,13 +1,13 @@
 import { Router } from 'express';
-import ContactInfo from '../../models/ContactInfo.js';
+import { db } from '../../config/firebase.js';
 
 const router = Router();
 
 // GET /api/admin/contact
 router.get('/', async (req, res, next) => {
   try {
-    const contact = await ContactInfo.findOne({ singletonKey: 'main' });
-    res.json({ success: true, data: contact || {} });
+    const snap = await db.collection('contactinfos').doc('main').get();
+    res.json({ success: true, data: snap.exists ? { id: snap.id, ...snap.data() } : {} });
   } catch (err) {
     next(err);
   }
@@ -25,22 +25,11 @@ router.put('/', async (req, res, next) => {
       taxNote,
     } = req.body;
 
-    const contact = await ContactInfo.findOneAndUpdate(
-      { singletonKey: 'main' },
-      {
-        $set: {
-          email,
-          phone,
-          contactPersonName,
-          contactPersonTitle,
-          address,
-          taxNote,
-        },
-      },
-      { new: true, upsert: true, runValidators: true }
-    );
+    const data = { email, phone, contactPersonName, contactPersonTitle, address, taxNote };
+    await db.collection('contactinfos').doc('main').set(data, { merge: true });
 
-    res.json({ success: true, data: contact });
+    const snap = await db.collection('contactinfos').doc('main').get();
+    res.json({ success: true, data: { id: snap.id, ...snap.data() } });
   } catch (err) {
     next(err);
   }
