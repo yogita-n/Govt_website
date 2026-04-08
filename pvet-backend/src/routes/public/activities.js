@@ -1,12 +1,18 @@
 import { Router } from 'express';
-import Activity from '../../models/Activity.js';
+import { db } from '../../config/firebase.js';
 
 const router = Router();
 
 // GET /api/public/activities
 router.get('/', async (req, res, next) => {
   try {
-    const activities = await Activity.find({ published: true }).sort({ date: -1 });
+    const snapshot = await db
+      .collection('activities')
+      .where('published', '==', true)
+      .orderBy('date', 'desc')
+      .get();
+
+    const activities = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
     res.json({ success: true, data: activities });
   } catch (err) {
     next(err);

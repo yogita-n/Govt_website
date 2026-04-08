@@ -1,7 +1,7 @@
 import { Router } from 'express';
-import Activity from '../../models/Activity.js';
+import { db } from '../../config/firebase.js';
 import upload from '../../middleware/upload.js';
-import { uploadToCloudinary, deleteFromCloudinary } from '../../utils/cloudinaryHelpers.js';
+import { uploadToImageKit, deleteFromImageKit } from '../../utils/imagekitHelpers.js';
 
 const router = Router();
 
@@ -9,11 +9,15 @@ const router = Router();
 router.get('/', async (req, res, next) => {
   try {
     const { status } = req.query;
-    let filter = {};
-    if (status === 'published') filter = { published: true };
-    if (status === 'draft') filter = { published: false };
+    let query = db.collection('activities');
 
-    const activities = await Activity.find(filter).sort({ date: -1 });
+    if (status === 'published') query = query.where('published', '==', true);
+    else if (status === 'draft') query = query.where('published', '==', false);
+
+    query = query.orderBy('date', 'desc');
+    const snapshot = await query.get();
+    const activities = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+
     res.json({ success: true, data: activities });
   } catch (err) {
     next(err);
@@ -23,17 +27,17 @@ router.get('/', async (req, res, next) => {
 // GET /api/admin/activities/:id
 router.get('/:id', async (req, res, next) => {
   try {
-    const activity = await Activity.findById(req.params.id);
-    if (!activity) {
+    const snap = await db.collection('activities').doc(req.params.id).get();
+    if (!snap.exists) {
       return res.status(404).json({ success: false, message: 'Activity not found' });
     }
-    res.json({ success: true, data: activity });
+    res.json({ success: true, data: { id: snap.id, ...snap.data() } });
   } catch (err) {
     next(err);
   }
 });
 
-// POST /api/admin/activities  — create (images uploaded separately)
+// POST /api/admin/activities
 router.post('/', async (req, res, next) => {
   try {
     const { title, date, category, description, published } = req.body;
@@ -42,147 +46,143 @@ router.post('/', async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Activity title is required' });
     }
 
-    const activity = await new Activity({
+    const data = {
       title,
-      date,
-      category,
-      description,
-      published: published || false,
-    }).save();
+      date:        date || null,
+      category:    category || '',
+      description: description || '',
+      published:   published || false,
+      images:      [],
+    };
 
-    res.status(201).json({ success: true, data: activity });
+    const ref = await db.collection('activities').add(data);
+    res.status(201).json({ success: true, data: { id: ref.id, ...data } });
   } catch (err) {
     next(err);
   }
 });
 
-// PUT /api/admin/activities/:id  — update text fields
+// PUT /api/admin/activities/:id
 router.put('/:id', async (req, res, next) => {
   try {
     const { title, date, category, description, published } = req.body;
+    const activityRef = db.collection('activities').doc(req.params.id);
+    const snap = await activityRef.get();
 
-    const activity = await Activity.findByIdAndUpdate(
-      req.params.id,
-      { $set: { title, date, category, description, published } },
-      { new: true, runValidators: true }
-    );
-
-    if (!activity) {
+    if (!snap.exists) {
       return res.status(404).json({ success: false, message: 'Activity not found' });
     }
 
-    res.json({ success: true, data: activity });
+    const updateData = { title, date, category, description, published };
+    await activityRef.update(updateData);
+
+    res.json({ success: true, data: { id: snap.id, ...snap.data(), ...updateData } });
   } catch (err) {
     next(err);
   }
 });
 
-// PUT /api/admin/activities/:id/publish  — toggle published flag
+// PUT /api/admin/activities/:id/publish
 router.put('/:id/publish', async (req, res, next) => {
   try {
-    const activity = await Activity.findById(req.params.id);
-    if (!activity) {
+    const activityRef = db.collection('activities').doc(req.params.id);
+    const snap = await activityRef.get();
+
+    if (!snap.exists) {
       return res.status(404).json({ success: false, message: 'Activity not found' });
     }
 
-    activity.published = !activity.published;
-    await activity.save();
+    const newPublished = !snap.data().published;
+    await activityRef.update({ published: newPublished });
 
     res.json({
       success: true,
-      data: activity,
-      message: `Activity ${activity.published ? 'published' : 'unpublished'}`,
+      data:    { id: snap.id, ...snap.data(), published: newPublished },
+      message: `Activity ${newPublished ? 'published' : 'unpublished'}`,
     });
   } catch (err) {
     next(err);
   }
 });
 
-// POST /api/admin/activities/:id/images  — upload images to existing activity
+// POST /api/admin/activities/:id/images
 router.post('/:id/images', upload.array('images', 20), async (req, res, next) => {
   try {
-    const activity = await Activity.findById(req.params.id);
-    if (!activity) {
+    const activityRef = db.collection('activities').doc(req.params.id);
+    const snap = await activityRef.get();
+
+    if (!snap.exists) {
       return res.status(404).json({ success: false, message: 'Activity not found' });
     }
-
     if (!req.files || req.files.length === 0) {
       return res.status(400).json({ success: false, message: 'No images provided' });
     }
 
-    // Parse optional captions array
     let captions = [];
-    try {
-      captions = JSON.parse(req.body.captions || '[]');
-    } catch {
-      captions = [];
-    }
+    try { captions = JSON.parse(req.body.captions || '[]'); } catch { captions = []; }
 
-    // Upload each file to Cloudinary
     const uploadPromises = req.files.map((file, i) =>
-      uploadToCloudinary(file.buffer, `pvet/activities/${req.params.id}`)
-        .then(({ url, publicId }) => ({
-          url,
-          publicId,
-          caption: captions[i] || '',
-        }))
+      uploadToImageKit(file.buffer, `pvet/activities/${req.params.id}`)
+        .then(({ url, publicId }) => ({ url, publicId, caption: captions[i] || '' }))
     );
 
     const newImages = await Promise.all(uploadPromises);
-    activity.images.push(...newImages);
-    await activity.save();
+    const merged   = [...(snap.data().images || []), ...newImages];
 
-    res.json({ success: true, data: activity });
+    await activityRef.update({ images: merged });
+    res.json({ success: true, data: { id: snap.id, ...snap.data(), images: merged } });
   } catch (err) {
     next(err);
   }
 });
 
-// DELETE /api/admin/activities/:id/images/:imageIndex  — remove one image
+// DELETE /api/admin/activities/:id/images/:imageIndex
 router.delete('/:id/images/:imageIndex', async (req, res, next) => {
   try {
-    const activity = await Activity.findById(req.params.id);
-    if (!activity) {
+    const activityRef = db.collection('activities').doc(req.params.id);
+    const snap = await activityRef.get();
+
+    if (!snap.exists) {
       return res.status(404).json({ success: false, message: 'Activity not found' });
     }
 
+    const images     = [...(snap.data().images || [])];
     const imageIndex = parseInt(req.params.imageIndex, 10);
-    if (isNaN(imageIndex) || imageIndex < 0 || imageIndex >= activity.images.length) {
+
+    if (isNaN(imageIndex) || imageIndex < 0 || imageIndex >= images.length) {
       return res.status(400).json({ success: false, message: 'Invalid image index' });
     }
 
-    const imageToDelete = activity.images[imageIndex];
-
-    // Clean up Cloudinary asset first
-    if (imageToDelete?.publicId) {
-      await deleteFromCloudinary(imageToDelete.publicId);
+    if (images[imageIndex]?.publicId) {
+      await deleteFromImageKit(images[imageIndex].publicId);
     }
 
-    activity.images.splice(imageIndex, 1);
-    await activity.save();
+    images.splice(imageIndex, 1);
+    await activityRef.update({ images });
 
-    res.json({ success: true, data: activity });
+    res.json({ success: true, data: { id: snap.id, ...snap.data(), images } });
   } catch (err) {
     next(err);
   }
 });
 
-// DELETE /api/admin/activities/:id  — delete activity + all its Cloudinary images
+// DELETE /api/admin/activities/:id
 router.delete('/:id', async (req, res, next) => {
   try {
-    const activity = await Activity.findById(req.params.id);
-    if (!activity) {
+    const activityRef = db.collection('activities').doc(req.params.id);
+    const snap = await activityRef.get();
+
+    if (!snap.exists) {
       return res.status(404).json({ success: false, message: 'Activity not found' });
     }
 
-    // Clean up all Cloudinary assets
-    const deletePromises = activity.images
-      .filter((img) => img.publicId)
-      .map((img) => deleteFromCloudinary(img.publicId));
-    await Promise.all(deletePromises);
+    await Promise.all(
+      (snap.data().images || [])
+        .filter((img) => img.publicId)
+        .map((img) => deleteFromImageKit(img.publicId))
+    );
 
-    await Activity.findByIdAndDelete(req.params.id);
-
+    await activityRef.delete();
     res.json({ success: true, message: 'Activity deleted successfully' });
   } catch (err) {
     next(err);

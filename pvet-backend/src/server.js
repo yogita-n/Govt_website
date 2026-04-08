@@ -1,15 +1,13 @@
 import 'dotenv/config';
 import app from './app.js';
-import connectDB from './config/db.js';
+import './config/firebase.js'; // initializes Firebase Admin on import
 import { seedAdmin, seedSiteImages, seedCampuses, seedContactInfo } from './utils/seedAdmin.js';
 
 const PORT = process.env.PORT || 5000;
 
 const start = async () => {
   try {
-    await connectDB();
-
-    // Safe on every restart — $setOnInsert never overwrites existing data
+    // Safe on every restart — only writes if document does not yet exist
     await seedAdmin();
     await seedSiteImages();
     await seedCampuses();

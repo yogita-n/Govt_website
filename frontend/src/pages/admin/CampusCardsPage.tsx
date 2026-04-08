@@ -47,7 +47,7 @@ function CampusCard({ campus }: { campus: Campus }) {
   return (
     <div className="bg-white rounded-2xl shadow overflow-hidden">
       <div className="relative">
-        <img src={campus.image.url} alt={campus.title} className="aspect-video w-full object-cover" />
+        <img src={campus.image?.url || ''} alt={campus.title} className="aspect-video w-full object-cover bg-gray-100" />
         <button onClick={() => setImgModal(true)} className="absolute bottom-3 right-3 bg-white/90 text-accent text-xs font-semibold px-3 py-1.5 rounded-lg hover:bg-white">
           Replace Image
         </button>
@@ -92,7 +92,7 @@ function CampusCard({ campus }: { campus: Campus }) {
       <ImageReplaceModal
         open={imgModal}
         onOpenChange={setImgModal}
-        currentUrl={campus.image.url}
+        currentUrl={campus.image?.url || ''}
         label={campus.title}
         onReplace={async (file) => {
           try {
@@ -110,6 +110,9 @@ function CampusCard({ campus }: { campus: Campus }) {
 export default function CampusCardsPage() {
   const { data: campuses, isLoading } = useCampuses(true);
 
+  // Filter out Library & Computer Lab from admin panel
+  const filteredCampuses = campuses?.filter(c => c.slug !== 'library') ?? [];
+
   return (
     <div>
       <h2 className="text-lg font-heading font-bold text-darkgreen mb-1">Campus Cards</h2>
@@ -118,7 +121,7 @@ export default function CampusCardsPage() {
         <div className="text-textmuted">Loading...</div>
       ) : (
         <div className="grid sm:grid-cols-2 gap-6">
-          {campuses?.map(c => <CampusCard key={c.slug} campus={c} />)}
+          {filteredCampuses.map(c => <CampusCard key={c.slug} campus={c} />)}
         </div>
       )}
     </div>
