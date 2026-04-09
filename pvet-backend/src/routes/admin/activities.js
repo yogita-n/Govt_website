@@ -95,6 +95,7 @@ router.put('/:id/publish', async (req, res, next) => {
     const newPublished = !snap.data().published;
     await activityRef.update({ published: newPublished });
 
+    const updated = { id: snap.id, ...snap.data(), published: newPublished };
     res.json({
       success: true,
       data:    { id: snap.id, ...snap.data(), published: newPublished },
