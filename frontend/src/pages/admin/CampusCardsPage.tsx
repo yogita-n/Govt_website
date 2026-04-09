@@ -110,6 +110,9 @@ function CampusCard({ campus }: { campus: Campus }) {
 export default function CampusCardsPage() {
   const { data: campuses, isLoading } = useCampuses(true);
 
+  // Filter out Library & Computer Lab from admin panel
+  const filteredCampuses = campuses?.filter(c => c.slug !== 'library') ?? [];
+
   return (
     <div>
       <h2 className="text-lg font-heading font-bold text-darkgreen mb-1">Campus Cards</h2>
@@ -118,7 +121,7 @@ export default function CampusCardsPage() {
         <div className="text-textmuted">Loading...</div>
       ) : (
         <div className="grid sm:grid-cols-2 gap-6">
-          {campuses?.map(c => <CampusCard key={c.slug} campus={c} />)}
+          {filteredCampuses.map(c => <CampusCard key={c.slug} campus={c} />)}
         </div>
       )}
     </div>

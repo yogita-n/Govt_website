@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { db } from '../../config/firebase.js';
 import upload from '../../middleware/upload.js';
-import { uploadToCloudinary, deleteFromCloudinary } from '../../utils/cloudinaryHelpers.js';
+import { uploadToImageKit, deleteFromImageKit } from '../../utils/imagekitHelpers.js';
 
 const router = Router();
 
@@ -16,7 +16,7 @@ router.get('/', async (req, res, next) => {
   }
 });
 
-// PUT /api/admin/site-images/:key  — replace a static site image
+// PUT /api/admin/site-images/:key — replace a static site image
 router.put('/:key', upload.single('image'), async (req, res, next) => {
   try {
     if (!req.file) {
@@ -26,16 +26,16 @@ router.put('/:key', upload.single('image'), async (req, res, next) => {
     const imageRef = db.collection('siteimages').doc(req.params.key);
     const existing = await imageRef.get();
 
-    // Delete old Cloudinary asset if one exists
+    // Delete old ImageKit asset if one exists
     if (existing.exists && existing.data()?.publicId) {
-      await deleteFromCloudinary(existing.data().publicId);
+      await deleteFromImageKit(existing.data().publicId);
     }
 
-    // Upload new image with a fixed publicId
-    const { url, publicId } = await uploadToCloudinary(
+    // Upload new image with a fixed fileName so it's identifiable in ImageKit
+    const { url, publicId } = await uploadToImageKit(
       req.file.buffer,
       'pvet/static',
-      `pvet/static/${req.params.key}`
+      `static_${req.params.key}`
     );
 
     await imageRef.set({ url, publicId }, { merge: true });

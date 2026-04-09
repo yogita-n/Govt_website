@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { db } from '../../config/firebase.js';
 import upload from '../../middleware/upload.js';
-import { uploadToCloudinary, deleteFromCloudinary } from '../../utils/cloudinaryHelpers.js';
+import { uploadToImageKit, deleteFromImageKit } from '../../utils/imagekitHelpers.js';
 
 const router = Router();
 
@@ -16,7 +16,7 @@ router.get('/', async (req, res, next) => {
   }
 });
 
-// PUT /api/admin/campuses/:slug  — update text fields
+// PUT /api/admin/campuses/:slug — update text fields
 router.put('/:slug', async (req, res, next) => {
   try {
     const { title, subtitle, description, stats } = req.body;
@@ -36,7 +36,7 @@ router.put('/:slug', async (req, res, next) => {
   }
 });
 
-// PUT /api/admin/campuses/:slug/image  — replace campus image
+// PUT /api/admin/campuses/:slug/image — replace campus image
 router.put('/:slug/image', upload.single('image'), async (req, res, next) => {
   try {
     if (!req.file) {
@@ -50,16 +50,16 @@ router.put('/:slug/image', upload.single('image'), async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'Campus not found' });
     }
 
-    // Delete old image from Cloudinary if it exists
+    // Delete old ImageKit asset if one exists
     if (snap.data().image?.publicId) {
-      await deleteFromCloudinary(snap.data().image.publicId);
+      await deleteFromImageKit(snap.data().image.publicId);
     }
 
-    // Upload new image — fixed publicId keeps the same CDN URL
-    const { url, publicId } = await uploadToCloudinary(
+    // Upload new image to ImageKit
+    const { url, publicId } = await uploadToImageKit(
       req.file.buffer,
       'pvet/campuses',
-      `pvet/campuses/${req.params.slug}`
+      `campus_${req.params.slug}`
     );
 
     await campusRef.update({ image: { url, publicId } });
