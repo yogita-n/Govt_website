@@ -2,7 +2,7 @@ export const mockSiteImages = [
   { key: 'hero_banner', label: 'Home Page Hero Banner', section: 'Home', url: 'https://images.unsplash.com/photo-1580582932707-520aed937b7b?w=1200&h=600&fit=crop', publicId: 'hero_banner' },
   { key: 'school_gate', label: 'School Entrance Gate', section: 'Home', url: 'https://images.unsplash.com/photo-1562774053-701939374585?w=800&h=500&fit=crop', publicId: 'school_gate' },
   { key: 'founder_portrait', label: 'Founder V.K. Veerappa', section: 'About', url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=600&fit=crop', publicId: 'founder_portrait' },
-  { key: 'campus_map', label: 'Campus Layout Map', section: 'Campus', url: 'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?w=1200&h=500&fit=crop', publicId: 'campus_map' },
+
 ];
 
 export const mockCampuses = [

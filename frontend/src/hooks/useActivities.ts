@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
-import { mockActivities, type Activity } from '@/lib/mockData';
+import type { Activity } from '@/lib/mockData';
 
 export function useActivities(isAdmin = false) {
   const base = isAdmin ? '/api/admin/activities' : '/api/public/activities';
@@ -11,7 +11,7 @@ export function useActivities(isAdmin = false) {
         const { data } = await api.get(base);
         return data.data ?? data;
       } catch {
-        return isAdmin ? mockActivities : mockActivities.filter(a => a.published);
+        return [];
       }
     },
   });

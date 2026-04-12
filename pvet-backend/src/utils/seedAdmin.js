@@ -22,7 +22,6 @@ export async function seedSiteImages() {
     { key: 'hero_banner',      label: 'Home Page Hero Banner',   section: 'home',   url: '', publicId: '' },
     { key: 'school_gate',      label: 'School Entrance Gate',    section: 'home',   url: '', publicId: '' },
     { key: 'founder_portrait', label: 'Founder V.K. Veerappa',   section: 'about',  url: '', publicId: '' },
-    { key: 'campus_map',       label: 'Campus Layout Map',       section: 'campus', url: '', publicId: '' },
   ];
 
   for (const img of images) {

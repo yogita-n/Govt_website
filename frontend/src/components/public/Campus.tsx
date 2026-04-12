@@ -162,13 +162,9 @@
 import SectionLabel from '@/components/shared/SectionLabel';
 import SkeletonCard from '@/components/shared/SkeletonCard';
 import { useCampuses } from '@/hooks/useCampuses';
-import { useSiteImages } from '@/hooks/useSiteImages';
 
 export default function Campus() {
   const { data: campuses, isLoading } = useCampuses();
-  const { data: images } = useSiteImages();
-
-  const campusMapUrl = images?.find(i => i.key === 'campus_map')?.url || '';
 
   // Filter out Library & Computer Lab card
   const filteredCampuses = campuses?.filter(c => c.slug !== 'library') ?? [];
@@ -183,18 +179,7 @@ export default function Campus() {
           3 Buildings · 5 Acres · Valagerehalli
         </h2>
 
-        {campusMapUrl && (
-          <div className="mt-8 mb-4">
-            <img
-              src={campusMapUrl}
-              alt="Campus Layout Map"
-              className="w-full rounded-xl shadow-md object-cover max-h-[400px]"
-            />
-            <p className="text-sm text-textmuted mt-2 text-center">
-              Campus layout — Valagerehalli, Maddur
-            </p>
-          </div>
-        )}
+
 
         <div className="mt-6 mb-10">
           <iframe

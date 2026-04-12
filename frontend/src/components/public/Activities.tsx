@@ -158,38 +158,42 @@ export default function Activities() {
           ))}
         </div>
 
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {isLoading
-            ? Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)
-            : filtered?.map(a => (
-                <div key={a.id} className="bg-white rounded-xl shadow-md overflow-hidden group">
-                  <div className="relative">
-                    {a.images[0] && (
-                      <img src={a.images[0].url} alt={a.title} className="aspect-video w-full object-cover" />
-                    )}
-                    <span className="absolute top-3 left-3 bg-primary text-white text-xs font-semibold px-3 py-1 rounded-full">
-                      {a.category}
-                    </span>
-                  </div>
+        {!isLoading && (!filtered || filtered.length === 0) ? (
+          <p className="text-textmuted text-sm py-10 text-center">No activities to show yet.</p>
+        ) : (
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {isLoading
+              ? Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)
+              : filtered?.map(a => (
+                  <div key={a.id} className="bg-white rounded-xl shadow-md overflow-hidden group">
+                    <div className="relative">
+                      {a.images[0] && (
+                        <img src={a.images[0].url} alt={a.title} className="aspect-video w-full object-cover" />
+                      )}
+                      <span className="absolute top-3 left-3 bg-primary text-white text-xs font-semibold px-3 py-1 rounded-full">
+                        {a.category}
+                      </span>
+                    </div>
 
-                  <div className="p-4 space-y-2">
-                    <h3 className="font-heading font-bold text-darkgreen">{a.title}</h3>
-                    <p className="text-xs text-textmuted">
-                      {new Date(a.date).toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' })}
-                    </p>
-                    <p className="text-sm text-textdark line-clamp-2">{a.description}</p>
-                    {a.images.length > 0 && (
-                      <button
-                        onClick={() => setLightbox({ images: a.images, index: 0 })}
-                        className="text-sm font-semibold text-accent hover:underline"
-                      >
-                        View Photos →
-                      </button>
-                    )}
+                    <div className="p-4 space-y-2">
+                      <h3 className="font-heading font-bold text-darkgreen">{a.title}</h3>
+                      <p className="text-xs text-textmuted">
+                        {new Date(a.date).toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' })}
+                      </p>
+                      <p className="text-sm text-textdark line-clamp-2">{a.description}</p>
+                      {a.images.length > 0 && (
+                        <button
+                          onClick={() => setLightbox({ images: a.images, index: 0 })}
+                          className="text-sm font-semibold text-accent hover:underline"
+                        >
+                          View Photos →
+                        </button>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
-        </div>
+                ))}
+          </div>
+        )}
 
       </div>
 

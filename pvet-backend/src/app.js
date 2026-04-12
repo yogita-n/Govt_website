@@ -57,14 +57,18 @@ app.use(
 );
 
 /* ─────────────────────────────────────────
-   Global rate limiter — 100 req / 15 min
+   Global rate limiter
+   - Development : 1000 req / 15 min  (relaxed for hot-reloads & React Query)
+   - Production  :  200 req / 15 min
 ───────────────────────────────────────── */
+const isDev = process.env.NODE_ENV !== 'production';
 const globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 100,
+  max: isDev ? 1000 : 200,
   message: { success: false, message: 'Too many requests. Please try again later.' },
   standardHeaders: true,
   legacyHeaders: false,
+  skip: () => isDev && process.env.DISABLE_RATE_LIMIT === 'true', // opt-out via env var
 });
 app.use(globalLimiter);
 
