@@ -1,3 +1,5 @@
+import 'dotenv/config';
+import './config/firebase.js'; // initialize Firebase Admin on import
 import express from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
